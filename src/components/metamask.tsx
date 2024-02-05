@@ -31,6 +31,13 @@ export function Metamask() {
   const listen = useListen();
 
   const handleConnect = async () => {
+
+    const { ethereum } = window;
+
+    if (!ethereum) {
+      return;
+    }
+
     dispatch({ type: "loading" });
     const accounts = await window.ethereum.request({
       method: "eth_requestAccounts",

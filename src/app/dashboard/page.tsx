@@ -74,6 +74,12 @@ export default function TaskPage() {
 
   const handleConnect = async () => {
     dispatch({ type: "loading" });
+
+    const { ethereum } = window;
+    if (!ethereum) {
+      return;
+    }
+
     const accounts = await window.ethereum.request({
       method: "eth_requestAccounts",
     });
@@ -103,12 +109,33 @@ export default function TaskPage() {
   const handleAddToken = async (index = 0) => {
     dispatch({ type: "loading" });
 
-    if (index == 0) {
-      TOKENS.forEach(async (token) => {
-        addTokenToMetamask(token);
+    try {
+      await window.ethereum.request({
+        method: "wallet_addEthereumChain",
+        params: [
+          {
+            chainId: "0x5",
+            rpcUrls: ["https://goerli.drpc.org/"],
+            chainName: "Goerli test network",
+            nativeCurrency: {
+              name: "GoerliETH",
+              symbol: "GoerliETH",
+              decimals: 18,
+            },
+            blockExplorerUrls: ["https://goerli.etherscan.io"],
+          },
+        ],
       });
-    } else {
-      addTokenToMetamask(TOKENS[index]);
+
+      if (index == 0) {
+        TOKENS.forEach(async (token) => {
+          addTokenToMetamask(token);
+        });
+      } else {
+        addTokenToMetamask(TOKENS[index]);
+      }
+    } catch (err: any) {
+      showToast("Metamask Setting", err.message);
     }
 
     dispatch({ type: "idle" });
@@ -330,7 +357,10 @@ export default function TaskPage() {
           { gasLimit: 600000 }
         );
         await arbitrageTxn.wait();
-        showToast("Running Bot", `Arbitrage Success, transaction hash: ${arbitrageTxn.hash}`);
+        showToast(
+          "Running Bot",
+          `Arbitrage Success, transaction hash: ${arbitrageTxn.hash}`
+        );
         getBalance();
       }
     } catch (err: any) {
@@ -432,30 +462,32 @@ export default function TaskPage() {
         )}
 
         {isMetamaskInstalled && (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Token</TableHead>
-                <TableHead>Balance</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow key={`ETH`}>
-                <TableCell> {`ETH`}</TableCell>
-                <TableCell>{roundwithdecimal(balance, 18)}</TableCell>
-              </TableRow>
-              {tokenBalances.map((balance, index) => {
-                return (
-                  <TableRow key={TOKENS[index].symbol}>
-                    <TableCell> {TOKENS[index].symbol}</TableCell>
-                    <TableCell>
-                      {roundwithdecimal(balance, TOKENS[index].decimals)}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+          <div className="hidden h-full flex-1 flex-col space-y-8 p-8 md:flex">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Token</TableHead>
+                  <TableHead>Balance</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow key={`ETH`}>
+                  <TableCell> {`ETH`}</TableCell>
+                  <TableCell>{roundwithdecimal(balance, 18)}</TableCell>
+                </TableRow>
+                {tokenBalances.map((balance, index) => {
+                  return (
+                    <TableRow key={TOKENS[index].symbol}>
+                      <TableCell> {TOKENS[index].symbol}</TableCell>
+                      <TableCell>
+                        {roundwithdecimal(balance, TOKENS[index].decimals)}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
         )}
         <DataTable data={logs} columns={columns} />
       </div>
