@@ -110,22 +110,22 @@ export default function TaskPage() {
     dispatch({ type: "loading" });
 
     try {
-      await window.ethereum.request({
-        method: "wallet_addEthereumChain",
-        params: [
-          {
-            chainId: "0x5",
-            rpcUrls: ["https://goerli.drpc.org/"],
-            chainName: "Goerli test network",
-            nativeCurrency: {
-              name: "GoerliETH",
-              symbol: "GoerliETH",
-              decimals: 18,
-            },
-            blockExplorerUrls: ["https://goerli.etherscan.io"],
-          },
-        ],
-      });
+      // await window.ethereum.request({
+      //   method: "wallet_addEthereumChain",
+      //   params: [
+      //     {
+      //       chainId: "0x5",
+      //       rpcUrls: ["https://goerli.drpc.org/"],
+      //       chainName: "Goerli test network",
+      //       nativeCurrency: {
+      //         name: "GoerliETH",
+      //         symbol: "GoerliETH",
+      //         decimals: 18,
+      //       },
+      //       blockExplorerUrls: ["https://goerli.etherscan.io"],
+      //     },
+      //   ],
+      // });
 
       if (index == 0) {
         TOKENS.forEach(async (token) => {
