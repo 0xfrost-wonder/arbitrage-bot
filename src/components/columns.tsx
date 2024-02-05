@@ -4,21 +4,49 @@ import { ColumnDef } from "@tanstack/react-table";
 
 import { Log } from "../data/schema";
 import { DataTableColumnHeader } from "./data-table-column-header";
+import Link from "next/link";
+import { buttonVariants } from "./ui/button";
+
+const shortenAddress = (address: string) => {
+  const prefix = address.slice(0, 6);
+  const suffix = address.slice(-6);
+  return `${prefix}...${suffix}`;
+};
 
 export const columns: ColumnDef<Log>[] = [
   {
     accessorKey: "id",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Transaction Number" />
+      <DataTableColumnHeader column={column} title="Txn Number" />
     ),
-    cell: ({ row }) => <div className="w-[80px]">{row.getValue("id")}</div>,
+    cell: ({ row }) => (
+      <div className="w-[120px]">
+        <Link
+          className={buttonVariants({ variant: "outline" })}
+          href={"https://goerli.etherscan.io/tx/" + row.getValue("id")}
+          target="_blank"
+        >
+          {shortenAddress(row.getValue("id"))}
+        </Link>
+      </div>
+    ),
   },
   {
     accessorKey: "wallet",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Wallet Address" />
     ),
-    cell: ({ row }) => <div className="w-[80px]">{row.getValue("wallet")}</div>,
+    cell: ({ row }) => (
+      <div className="w-[120px]">
+        <Link
+          className={buttonVariants({ variant: "outline" })}
+          href={"https://goerli.etherscan.io/address/" + row.getValue("wallet")}
+          target="_blank"
+        >
+          {shortenAddress(row.getValue("wallet"))}
+        </Link>
+      </div>
+    ),
   },
   {
     accessorKey: "token0",

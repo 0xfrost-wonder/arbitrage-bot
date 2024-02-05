@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { ArrowRightIcon } from "@radix-ui/react-icons";
+import { ArrowRightIcon, ReloadIcon } from "@radix-ui/react-icons";
 
 import { Separator } from "@/components/ui/separator";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -33,6 +33,18 @@ import { DataTable } from "@/components/data-table";
 import { UserNav } from "@/components/user-nav";
 import { Log, logSchema } from "@/data/schema";
 import { log } from "console";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 
 // Simulate a database read for tasks.
 // async function getTasks() {
@@ -55,6 +67,8 @@ export default function TaskPage() {
   const getArbitrageContract = () => {
     return getContract(ARITRAGE_CONTRACT_ADDRESS, Arbitrage_ABI);
   };
+
+  const { toast } = useToast();
 
   const listen = useListen();
 
@@ -126,20 +140,6 @@ export default function TaskPage() {
     });
   };
 
-  const shortenAddress = (address: string) => {
-    const prefix = address.slice(0, 6);
-    const suffix = address.slice(-6);
-    return `${prefix}...${suffix}`;
-  };
-
-  const tokenMap = TOKENS.reduce<{ [key: string]: string }>(
-    (result, token, index) => {
-      result[token.address] = token.symbol;
-      return result;
-    },
-    {}
-  );
-
   const getLogs = async () => {
     const { ethereum } = window;
     if (!ethereum) {
@@ -150,13 +150,10 @@ export default function TaskPage() {
     if (arbitrageContract == null) return;
     const last_block = await provider.getBlockNumber();
     const events = await arbitrageContract.queryFilter("*", 0, last_block);
+
     let logs: any[] = [];
 
-    let tokenList = {};
-
     events.forEach((event) => {
-      console.log(event);
-
       const txHash = event.transactionHash.toString();
       const wallet = event.args?.src.toString();
       const token0Addr = event.args?.t0.toString();
@@ -178,16 +175,19 @@ export default function TaskPage() {
         }
       });
 
-      logs.push({
-        id: shortenAddress(txHash),
-        wallet: shortenAddress(wallet),
-        token0: token0.symbol ?? "Unknown",
-        token1: token1.symbol ?? "Unknown",
-        amountIn: roundwithdecimal(amountIn, token0.decimals ?? 0),
-        amountOut: roundwithdecimal(amountOut, token0.decimals ?? 0),
-        type: type == "0" ? "UNI -> SUS" : "SUS -> UNI",
-        block: event.args?.wad.toString() ?? null,
-      });
+      logs = [
+        {
+          id: txHash,
+          wallet: wallet,
+          token0: token0.symbol ?? "Unknown",
+          token1: token1.symbol ?? "Unknown",
+          amountIn: roundwithdecimal(amountIn, token0.decimals ?? 0),
+          amountOut: roundwithdecimal(amountOut, token0.decimals ?? 0),
+          type: type == "0" ? "UNI -> SUS" : "SUS -> UNI",
+          block: event.args?.wad.toString() ?? null,
+        },
+        ...logs,
+      ];
     });
 
     // const events = JSON.parse(data.toString());
@@ -244,12 +244,60 @@ export default function TaskPage() {
     return parseInt(x) / Math.pow(10, decimal);
   };
 
-  const runBot = async (index0 = 0, index1 = 1) => {
+  const [tokenA, setTokenA] = useState<string>();
+  const [tokenB, setTokenB] = useState<string>();
+  const [loanAmount, setLoanAmount] = useState<string>();
+
+  const showToast = (title: string, description: string) => {
+    toast({
+      title: title,
+      description: description,
+    });
+  };
+
+  const runBot = async () => {
+    if (!tokenA) {
+      showToast("Validation", "Select Token A");
+      return;
+    }
+
+    if (!tokenB) {
+      showToast("Validation", "Select Token B");
+      return;
+    }
+
+    if (tokenA == tokenB) {
+      showToast("Validation", "Select different tokens");
+      return;
+    }
+
+    if (!loanAmount) {
+      showToast("Validation", "Input loan amount");
+      return;
+    }
+
+    const index0 = parseInt(tokenA);
+    const index1 = parseInt(tokenB);
+    const loan = Math.floor(
+      parseFloat(loanAmount) * Math.pow(10, TOKENS[index0].decimals)
+    );
+
+    if (loan < 0) {
+      showToast("Validation", "Input positive loan amount");
+      return;
+    }
+
+    if (loan > parseInt(tokenBalances[index0])) {
+      showToast("Validation", "Not enough balance");
+      return;
+    }
+
     dispatch({ type: "loading" });
+
     try {
-      const balance = "0.001";
+      const balance = loanAmount;
       // const amount = utils.formatEther(balance);
-      const amount = ethers.utils.parseUnits(balance, "ether");
+      const amount = loan;
       // await getUniswapOutAmount(amount);
 
       // return;
@@ -264,15 +312,15 @@ export default function TaskPage() {
           signer
         );
 
-        console.log("Initialize approvement");
+        showToast("Running Bot", "Initialize approvement");
         let aproveTxn = await wethContract.approve(
           ARITRAGE_CONTRACT_ADDRESS,
           amount
         );
         await aproveTxn.wait();
-        console.log("Approving... please wait");
+        showToast("Running Bot", "Approved");
 
-        console.log("Initialize abitrage transaction");
+        showToast("Running Bot", "Initialize abitrage transaction");
         let arbitrageContract = getArbitrageContract();
         if (arbitrageContract == null) return;
         let arbitrageTxn = await arbitrageContract.swap(
@@ -282,14 +330,13 @@ export default function TaskPage() {
           { gasLimit: 600000 }
         );
         await arbitrageTxn.wait();
-        console.log(
-          `Arbitrage Success, transaction hash: ${arbitrageTxn.hash}`
-        );
+        showToast("Running Bot", `Arbitrage Success, transaction hash: ${arbitrageTxn.hash}`);
         getBalance();
       }
-    } catch (err) {
-      console.log(err);
+    } catch (err: any) {
+      showToast("Running Bot", err.message);
     }
+
     dispatch({ type: "idle" });
   };
 
@@ -314,10 +361,75 @@ export default function TaskPage() {
                 onClick={() => handleAddToken()}
               >{`Can't see Tokens from Metamask?`}</Button>
               <Button onClick={() => getBalance()}>{`Balance Reload`}</Button>
-              <Button onClick={() => runBot()}>{`Run Bot`}</Button>
             </>
           )}
         </PageActions>
+        {isMetamaskInstalled && (
+          <PageActions>
+            <div className="flex w-full max-w-[750px] items-center space-x-2">
+              <Select
+                onValueChange={(value) => {
+                  setTokenA(value);
+                }}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Select Token A" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Token A</SelectLabel>
+                    {TOKENS.map((token, index) => {
+                      return (
+                        <SelectItem key={index} value={index.toString()}>
+                          {token.symbol}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <Select
+                onValueChange={(value) => {
+                  setTokenB(value);
+                }}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Select Token B" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Token B</SelectLabel>
+                    {TOKENS.map((token, index) => {
+                      return (
+                        <SelectItem key={index} value={index.toString()}>
+                          {token.symbol}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <Input
+                className="w-[200px]"
+                type="number"
+                placeholder="Loan Amount"
+                onChange={(event) => {
+                  setLoanAmount(event.target.value);
+                }}
+              />
+
+              {status == "loading" && (
+                <Button disabled>
+                  <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
+                  Please wait
+                </Button>
+              )}
+              {status != "loading" && (
+                <Button onClick={() => runBot()}>{`Run Bot`}</Button>
+              )}
+            </div>
+          </PageActions>
+        )}
 
         {isMetamaskInstalled && (
           <Table>
