@@ -6,8 +6,8 @@ type DisconnectAction = { type: "disconnect" };
 type PageLoadedAction = {
   type: "pageLoaded";
   isMetamaskInstalled: boolean;
-  wallet: string | null;
-  balance: string | null;
+  wallet: string;
+  balance: string;
 };
 type LoadingAction = { type: "loading" };
 type IdleAction = { type: "idle" };
@@ -59,7 +59,7 @@ function metamaskReducer(state: State, action: Action): State {
       if (typeof window.ethereum !== undefined) {
         window.ethereum.removeAllListeners(["accountsChanged"]);
       }
-      return { ...state, wallet: null, balance: null };
+      return { ...state, wallet: null, balance: "0" };
     }
     case "pageLoaded": {
       const { isMetamaskInstalled, balance, wallet } = action;
