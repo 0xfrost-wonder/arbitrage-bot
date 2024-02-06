@@ -8,7 +8,7 @@ import { MetamaskProvider, useMetamask } from "@/hooks/useMetamask";
 import { useEffect, useState } from "react";
 import { useListen } from "@/hooks/useListen";
 import { cn } from "@/lib/utils";
-import { ethers } from "ethers";
+import { ethers, utils } from "ethers";
 import { ARITRAGE_CONTRACT_ADDRESS, TOKENS, rpcUrl } from "@/data/address";
 import {
   Table,
@@ -323,8 +323,8 @@ export default function TaskPage() {
 
     try {
       const balance = loanAmount;
-      // const amount = utils.formatEther(balance);
-      const amount = loan;
+      const amount = ethers.utils.parseUnits(balance, TOKENS[index0].decimals);
+      // const amount = loan;
       // await getUniswapOutAmount(amount);
 
       // return;
