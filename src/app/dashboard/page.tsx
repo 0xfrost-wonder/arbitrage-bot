@@ -45,6 +45,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
+import { signOut } from "next-auth/react";
 
 // Simulate a database read for tasks.
 // async function getTasks() {
@@ -393,6 +394,7 @@ export default function TaskPage() {
               <Button onClick={() => getBalance()}>{`Balance Reload`}</Button>
             </>
           )}
+          <Button onClick={() => signOut()}>{`Logout`}</Button>
         </PageActions>
         {isMetamaskInstalled && (
           <PageActions>

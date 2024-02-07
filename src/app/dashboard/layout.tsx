@@ -5,6 +5,9 @@ import {
   PageHeaderHeading,
 } from "@/components/page-header";
 import { MetamaskProvider } from "../../hooks/useMetamask";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/auth";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Examples",
@@ -15,7 +18,12 @@ interface ExamplesLayoutProps {
   children: React.ReactNode;
 }
 
-export default function ExamplesLayout({ children }: ExamplesLayoutProps) {
+export default async function ExamplesLayout({ children }: ExamplesLayoutProps) {
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    redirect('/')
+  }
   return (
     <>
       <MetamaskProvider>
