@@ -253,7 +253,7 @@ export default function TaskPage() {
     if (isMetamaskInstalled && checkChain()) {
       getBalance();
     }
-  }, [isMetamaskInstalled, chainId, wallet]);
+  }, [isMetamaskInstalled, chainId, wallet, checkChain]);
 
   useEffect(() => {
     if (typeof window !== undefined) {
@@ -298,7 +298,7 @@ export default function TaskPage() {
         handleConnect();
       }
     }
-  }, []);
+  }, [dispatch, handleConnect, listen]);
 
   const roundwithdecimal = (x: string, decimal: number) => {
     return parseInt(x) / Math.pow(10, decimal);
