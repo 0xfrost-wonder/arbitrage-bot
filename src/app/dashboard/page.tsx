@@ -81,10 +81,6 @@ export default function TaskPage() {
 
   const listen = useListen();
 
-  const checkChain = () => {
-    return isMetamaskInstalled && chainId == CHAIN_ID
-  }
-
   const handleConnect = async () => {
     dispatch({ type: "loading" });
 
@@ -250,7 +246,7 @@ export default function TaskPage() {
   };
 
   useEffect(() => {
-    if (isMetamaskInstalled && checkChain()) {
+    if (isMetamaskInstalled && chainId == CHAIN_ID) {
       getBalance();
     }
   }, [isMetamaskInstalled, chainId, wallet]);
@@ -409,7 +405,7 @@ export default function TaskPage() {
     <>
       <div className="hidden h-full flex-1 flex-col space-y-8 p-8 md:flex">
         <PageActions>
-          {isMetamaskInstalled && !checkChain() && (
+          {isMetamaskInstalled && chainId != CHAIN_ID && (
             <Label>{`Change chain to Goerli Network`}</Label>
           )}
           {!isMetamaskInstalled && (
@@ -421,7 +417,7 @@ export default function TaskPage() {
               Install Metamask
             </Link>
           )}
-          {isMetamaskInstalled && checkChain() && (
+          {isMetamaskInstalled && chainId == CHAIN_ID && (
             <>
               <Button
                 onClick={() => handleAddToken()}
@@ -431,7 +427,7 @@ export default function TaskPage() {
           )}
           <Button onClick={() => signOut()}>{`Logout`}</Button>
         </PageActions>
-        {isMetamaskInstalled && checkChain() && (
+        {isMetamaskInstalled && chainId == CHAIN_ID && (
           <PageActions>
             {wallet && (
               <div className="flex w-full max-w-[750px] items-center space-x-2">
@@ -503,7 +499,7 @@ export default function TaskPage() {
           </PageActions>
         )}
 
-        {isMetamaskInstalled && checkChain() && (
+        {isMetamaskInstalled && chainId == CHAIN_ID && (
           <div className="hidden h-full flex-1 flex-col space-y-8 p-8 md:flex">
             <Table>
               <TableHeader>
@@ -531,7 +527,7 @@ export default function TaskPage() {
             </Table>
           </div>
         )}
-        {isMetamaskInstalled && checkChain() && (
+        {isMetamaskInstalled && chainId == CHAIN_ID && (
           <DataTable data={logs} columns={columns} />
         )}
       </div>
