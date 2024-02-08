@@ -8,6 +8,7 @@ type PageLoadedAction = {
   isMetamaskInstalled: boolean;
   wallet: string;
   balance: string;
+  chainId: string;
 };
 type LoadingAction = { type: "loading" };
 type IdleAction = { type: "idle" };
@@ -34,6 +35,7 @@ type State = {
   status: Status;
   balance: string;
   tokenBalances: string[];
+  chainId: string;
 };
 
 const initialState: State = {
@@ -41,7 +43,8 @@ const initialState: State = {
   isMetamaskInstalled: false,
   status: "loading",
   balance: "0",
-  tokenBalances: []
+  tokenBalances: [],
+  chainId: ""
 } as const;
 
 function metamaskReducer(state: State, action: Action): State {
@@ -62,8 +65,8 @@ function metamaskReducer(state: State, action: Action): State {
       return { ...state, wallet: null, balance: "0" };
     }
     case "pageLoaded": {
-      const { isMetamaskInstalled, balance, wallet } = action;
-      return { ...state, isMetamaskInstalled, status: "idle", wallet, balance };
+      const { isMetamaskInstalled, balance, wallet, chainId } = action;
+      return { ...state, isMetamaskInstalled, status: "idle", wallet, balance, chainId };
     }
     case "loading": {
       return { ...state, status: "loading" };

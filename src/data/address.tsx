@@ -13,3 +13,5 @@ export const TOKENS = [
     decimals: 6,
   },
 ];
+
+export const CHAIN_ID = '0x5';

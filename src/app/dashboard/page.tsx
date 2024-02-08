@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { useListen } from "@/hooks/useListen";
 import { cn } from "@/lib/utils";
 import { ethers, utils } from "ethers";
-import { ARITRAGE_CONTRACT_ADDRESS, TOKENS, rpcUrl } from "@/data/address";
+import { ARITRAGE_CONTRACT_ADDRESS, TOKENS, rpcUrl, CHAIN_ID } from "@/data/address";
 import {
   Table,
   TableBody,
@@ -26,7 +26,7 @@ import ERC20_ABI from "@/abi/ERC20.abi.json";
 import path from "path";
 import { Metadata } from "next";
 import Image from "next/image";
-import { z } from "zod";
+import { string, z } from "zod";
 
 import { columns } from "@/components/columns";
 import { DataTable } from "@/components/data-table";
@@ -63,7 +63,14 @@ export default function TaskPage() {
   // const tasks = await getTasks();
   const {
     dispatch,
-    state: { status, isMetamaskInstalled, wallet, balance, tokenBalances },
+    state: {
+      status,
+      isMetamaskInstalled,
+      wallet,
+      balance,
+      tokenBalances,
+      chainId,
+    },
   } = useMetamask();
 
   const getArbitrageContract = () => {
@@ -73,6 +80,10 @@ export default function TaskPage() {
   const { toast } = useToast();
 
   const listen = useListen();
+
+  const checkChain = () => {
+    return isMetamaskInstalled && chainId == CHAIN_ID
+  }
 
   const handleConnect = async () => {
     dispatch({ type: "loading" });
@@ -116,7 +127,7 @@ export default function TaskPage() {
       //   method: "wallet_addEthereumChain",
       //   params: [
       //     {
-      //       chainId: "0x5",
+      //       chainId: CHAIN_ID,
       //       rpcUrls: ["https://goerli.drpc.org/"],
       //       chainName: "Goerli test network",
       //       nativeCurrency: {
@@ -239,8 +250,10 @@ export default function TaskPage() {
   };
 
   useEffect(() => {
-    getBalance();
-  }, [wallet]);
+    if (isMetamaskInstalled && checkChain()) {
+      getBalance();
+    }
+  }, [isMetamaskInstalled, chainId, wallet]);
 
   useEffect(() => {
     if (typeof window !== undefined) {
@@ -250,6 +263,7 @@ export default function TaskPage() {
       // using the boolean constructor to be explecit and not let this be used as a falsy value (optional)
       const isMetamaskInstalled =
         ethereumProviderInjected && Boolean(window.ethereum.isMetaMask);
+      const chainId = ethereumProviderInjected ? window.ethereum.chainId : "";
 
       const local = window.localStorage.getItem("metamaskState");
 
@@ -264,8 +278,25 @@ export default function TaskPage() {
         : // backup if local storage is empty
           { wallet: null, balance: null };
 
-      dispatch({ type: "pageLoaded", isMetamaskInstalled, wallet, balance });
-      handleConnect();
+      dispatch({
+        type: "pageLoaded",
+        isMetamaskInstalled,
+        wallet,
+        balance,
+        chainId,
+      });
+      window.ethereum.on("chainChanged", () => window.location.reload());
+      interface ConnectInfo {
+        chainId: string;
+      }
+
+      window.ethereum.on("connect", (connectInfo: ConnectInfo) =>
+        console.log(connectInfo)
+      );
+
+      if (chainId == CHAIN_ID) {
+        handleConnect();
+      }
     }
   }, []);
 
@@ -378,6 +409,9 @@ export default function TaskPage() {
     <>
       <div className="hidden h-full flex-1 flex-col space-y-8 p-8 md:flex">
         <PageActions>
+          {isMetamaskInstalled && !checkChain() && (
+            <Label>{`Change chain to Goerli Network`}</Label>
+          )}
           {!isMetamaskInstalled && (
             <Link
               href="https://metamask.io/"
@@ -387,7 +421,7 @@ export default function TaskPage() {
               Install Metamask
             </Link>
           )}
-          {isMetamaskInstalled && (
+          {isMetamaskInstalled && checkChain() && (
             <>
               <Button
                 onClick={() => handleAddToken()}
@@ -397,10 +431,9 @@ export default function TaskPage() {
           )}
           <Button onClick={() => signOut()}>{`Logout`}</Button>
         </PageActions>
-        {isMetamaskInstalled && (
+        {isMetamaskInstalled && checkChain() && (
           <PageActions>
-            {wallet &&
-            (
+            {wallet && (
               <div className="flex w-full max-w-[750px] items-center space-x-2">
                 <Label>Wallet address: {wallet}</Label>
               </div>
@@ -470,7 +503,7 @@ export default function TaskPage() {
           </PageActions>
         )}
 
-        {isMetamaskInstalled && (
+        {isMetamaskInstalled && checkChain() && (
           <div className="hidden h-full flex-1 flex-col space-y-8 p-8 md:flex">
             <Table>
               <TableHeader>
@@ -498,7 +531,9 @@ export default function TaskPage() {
             </Table>
           </div>
         )}
-        <DataTable data={logs} columns={columns} />
+        {isMetamaskInstalled && checkChain() && (
+          <DataTable data={logs} columns={columns} />
+        )}
       </div>
     </>
   );

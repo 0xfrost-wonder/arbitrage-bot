@@ -1,5 +1,6 @@
 type InjectedProviders = {
   isMetaMask?: true;
+  chainId: string;
 };
 
 interface Window {
