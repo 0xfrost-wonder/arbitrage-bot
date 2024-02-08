@@ -9,7 +9,12 @@ import { useEffect, useState } from "react";
 import { useListen } from "@/hooks/useListen";
 import { cn } from "@/lib/utils";
 import { ethers, utils } from "ethers";
-import { ARITRAGE_CONTRACT_ADDRESS, TOKENS, rpcUrl, CHAIN_ID } from "@/data/address";
+import {
+  ARITRAGE_CONTRACT_ADDRESS,
+  TOKENS,
+  rpcUrl,
+  CHAIN_ID,
+} from "@/data/address";
 import {
   Table,
   TableBody,
@@ -427,13 +432,15 @@ export default function TaskPage() {
           )}
           <Button onClick={() => signOut()}>{`Logout`}</Button>
         </PageActions>
+
         {isMetamaskInstalled && chainId == CHAIN_ID && (
           <PageActions>
-            {wallet && (
-              <div className="flex w-full max-w-[750px] items-center space-x-2">
-                <Label>Wallet address: {wallet}</Label>
-              </div>
-            )}
+            {wallet && <Label>Wallet address: {wallet}</Label>}
+          </PageActions>
+        )}
+
+        {isMetamaskInstalled && chainId == CHAIN_ID && (
+          <PageActions>
             <div className="flex w-full max-w-[750px] items-center space-x-2">
               <Select
                 onValueChange={(value) => {
