@@ -46,6 +46,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { signOut } from "next-auth/react";
+import { Label } from "@/components/ui/label";
 
 // Simulate a database read for tasks.
 // async function getTasks() {
@@ -398,6 +399,12 @@ export default function TaskPage() {
         </PageActions>
         {isMetamaskInstalled && (
           <PageActions>
+            {wallet &&
+            (
+              <div className="flex w-full max-w-[750px] items-center space-x-2">
+                <Label>Wallet address: {wallet}</Label>
+              </div>
+            )}
             <div className="flex w-full max-w-[750px] items-center space-x-2">
               <Select
                 onValueChange={(value) => {
