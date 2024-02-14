@@ -286,17 +286,21 @@ export default function TaskPage() {
         balance,
         chainId,
       });
-      window.ethereum.on("chainChanged", () => window.location.reload());
-      interface ConnectInfo {
-        chainId: string;
-      }
 
-      window.ethereum.on("connect", (connectInfo: ConnectInfo) =>
-        console.log(connectInfo)
-      );
+      if (window.ethereum) {
+        window.ethereum.on("chainChanged", () => window.location.reload());
 
-      if (chainId == CHAIN_ID) {
-        handleConnect();
+        interface ConnectInfo {
+          chainId: string;
+        }
+
+        window.ethereum.on("connect", (connectInfo: ConnectInfo) =>
+          console.log(connectInfo)
+        );
+
+        if (chainId == CHAIN_ID) {
+          handleConnect();
+        }
       }
     }
   }, [dispatch, chainId]);
